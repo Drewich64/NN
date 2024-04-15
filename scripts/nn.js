@@ -11,8 +11,6 @@ class NeuralNetwork {
         this.layers = layers;
         this.weights = [];
         this.biases = [];
-
-        // this.initRandom();
     }
 
     print() {
@@ -71,32 +69,6 @@ class NeuralNetwork {
         return n;
     }
 
-    // feedforward(arr) {
-    //     let v = Matrix.vectorFrom(arr);
-    //     let next = v;
-    //     for (let i = 0; i < this.layers.length-1; i++) {
-    //         let output = Matrix.mmul(this.weights[i], next);
-    //         console.log(`Iteration ${i}. output =`);
-    //         this.weights[i].print();
-    //         console.log("*");
-    //         next.print();
-    //         console.log("=");
-    //         output.print();
-
-    //         console.log("+");
-    //         this.biases[i].print();
-    //         console.log("=");
-    //         output = Matrix.madd(output, this.biases[i]);
-    //         output.print();
-    //         output.map(this.sigmoid);
-    //         console.log("Sigmoided: ");
-    //         output.print();
-    //         next = output;
-    //     }
-    //     console.log("ouput activation:");
-    //     next.print();
-    //     return next;
-    // }
     feedforward(arr) {
         let v = Matrix.vectorFrom(arr);
         let prev_act = v;
@@ -135,7 +107,6 @@ class NeuralNetwork {
         let err = Matrix.madd(input, answer.map((x)=>-x));
         console.log(err);
     }
-
 
     bprop() {
 
