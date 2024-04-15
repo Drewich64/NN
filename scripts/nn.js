@@ -12,33 +12,41 @@ class NeuralNetwork {
         this.weights = [];
         this.biases = [];
 
-        this.initRandom();
+        // this.initRandom();
     }
 
     print() {
-        this.weights.forEach((item) => {console.log("Layer");item.print()});
+        for (let i = 0; i < this.layers.length-1; i++) {
+            let w_i = this.weights[i];
+            let b_i = this.biases[i];
+            console.log("Layer " + i);
+            console.log("Weights:");
+            w_i.print();
+            console.log("Biases:");
+            b_i.print();
+        }
     }
 
     initRandom() {
-        for (let i = 1; i < this.layers.length; i++) {
+        for (let i = 0; i < this.layers.length-1; i++) {
             this.weights.push(new Matrix([this.layers[i+1], this.layers[i], "random"]));
             this.biases.push(new Matrix([this.layers[i+1], 1, "random"]));
         }
     }
 
     initialize(w, b) {
-        if (w.length != this.layers - 1 || b.length != this.layers - 1) {
+        if (w.length != this.layers.length - 1 || b.length != this.layers.length - 1) {
             console.log("Wrong matrix amount when initializing neural network parameters.");
             return;
         }
-        for (let i = 0; i < this.layers.length; i++) {
+        for (let i = 0; i < this.layers.length-1; i++) {
             // Init weights
             if (w[i].rows == this.layers[i+1] && w[i].cols == this.layers[i]) {
                 this.weights.push(w[i]);
             } else console.log("Wrong matrix size when initializing neural network parameters.");
             // Init biases
             if (b[i].rows == this.layers[i+1] && b[i].cols == 1) {
-                this.biases.push(w[i]);
+                this.biases.push(b[i]);
             } else console.log("Wrong matrix size when initializing neural network parameters.");
         }
     }
@@ -91,30 +99,33 @@ class NeuralNetwork {
     // }
     feedforward(arr) {
         let v = Matrix.vectorFrom(arr);
-        let next = v;
-        for (let i = 1; i < this.layers.length; i++) {
-            let output = Matrix.mmul(this.weights[i], next);
+        let prev_act = v;
+        for (let i = 0; i < this.layers.length-1; i++) {
+            let output = Matrix.mmul(this.weights[i], prev_act);
             output = Matrix.madd(output, this.biases[i]);
             output.map(this.sigmoid);
-            next = output;
+            prev_act = output;
         }
         console.log("ouput activation:");
-        // let out = this.softmax(next);
-        out.map(this.sigmoid());
+        // let out = this.softmax(prev_act);
+        let out = prev_act;
+        out.map(this.sigmoid);
         out.print();
         return out;
     }
 
     ff(arr, activationf) {
         let v = Matrix.vectorFrom(arr);
-        let next = v;
+        let prev_act = v;
         for (let i = 0; i < this.layers.length-1; i++) {
-            let output = Matrix.mmul(this.weights[i], next);
+            let output = Matrix.mmul(this.weights[i], prev_act);
             output = Matrix.madd(output, this.biases[i]);
             output.map(activationf);
-            next = output;
+            prev_act = output;
         }
         console.log("ouput activation:");
+        // let out = this.softmax(prev_act);
+        let out = prev_act;
         // out.map(this.sigmoid());
         out.print();
         return out;
