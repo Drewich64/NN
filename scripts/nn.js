@@ -13,6 +13,14 @@ class NeuralNetwork {
         this.biases = [];
     }
 
+    activ_f = (x) => x <= 0 ? 0 : x;
+    activ_f_prime = (x) => x <= 0 ? 0 : 1;
+
+    setAciv_f(f, f_prime) {
+        this.activ_f = f;
+        this.activ_f_prime = f_prime; 
+    }
+
     print() {
         for (let i = 0; i < this.layers.length-1; i++) {
             let w_i = this.weights[i];
@@ -73,63 +81,109 @@ class NeuralNetwork {
         let v = Matrix.vectorFrom(arr);
         let prev_act = v;
         for (let i = 0; i < this.layers.length-1; i++) {
-            let output = Matrix.mmul(this.weights[i], prev_act);
-            output = Matrix.madd(output, this.biases[i]);
-            output.map(this.sigmoid);
+            let output = this.weights[i].mmul(prev_act);
+            output = output.madd(this.biases[i]);
+            output = output.map(this.activ_f);
             prev_act = output;
         }
         console.log("ouput activation:");
-        // let out = this.softmax(prev_act);
         let out = prev_act;
-        out.map(this.sigmoid);
         out.print();
         return out;
     }
 
-    ff(arr, activationf) {
-        let v = Matrix.vectorFrom(arr);
-        let prev_act = v;
-        for (let i = 0; i < this.layers.length-1; i++) {
-            let output = Matrix.mmul(this.weights[i], prev_act);
-            output = Matrix.madd(output, this.biases[i]);
-            output.map(activationf);
-            prev_act = output;
-        }
-        console.log("ouput activation:");
-        // let out = this.softmax(prev_act);
-        let out = prev_act;
-        // out.map(this.sigmoid());
-        out.print();
-        return out;
-    }
-
-    calculateErrors(input, answer) {
-        let err = Matrix.madd(input, answer.map((x)=>-x));
-        console.log(err);
-    }
-
-    bprop() {
-
-    }
-
-    train(input, answer) {
+    getZ(input) {
+        let prev_act = input;    
+        let z = [];
         let activations = [];
-        let v = Matrix.vectorFrom(input);
-        let next = v;
-        for (let i = 0; i < this.layers.length-1; i++) {
-            let output = Matrix.mmul(this.weights[i], next);
-            output = Matrix.madd(output, this.biases[i]);
-            output.map(this.sigmoid);
+        activations.push(input);
+        z.push(input);
+        for (let l = 0; l < this.layers.length - 1; l++) { // Going through all of the Layers
+            let output = this.weights[l].mmul(prev_act);
+            output = output.madd(this.biases[l]);
+            z.push(output);
+            if (l < this.layers.length-1) output = output.map(this.activ_f);
             activations.push(output);
-            next = output;
+            prev_act = output;
         }
-        for (let i = 0; i < activations.length; i++) {
-            console.log(`Activation ${i+1}:`);
-            activations[i].print();
-        }
-
-
-
+        // console.log(Matrix.arrayFrom(activations[activations.length-1]));
+        return [z, activations];
     }
 
+
+    training(data, lr) {
+        // data = [[input1, label1], [input2, label2], ... [inputn, labeln]];
+        // Where input1 = vector of input layer length, label1 = vector of output layer length
+
+        for (let e = 0; e < data.length; e++) { // Going through all of the data Examples
+            let input = data[e][0];
+            let label = data[e][1];
+            let z_act = this.getZ(input);
+            let z = z_act[0];
+            let activations = z_act[1];
+            // Backpropagation
+            // Calculating the dC/da of the output layer
+            let output = z[z.length-1];
+            let cost = activations[activations.length-1].madd(label.map((x)=>-x)).map((x)=>x*x);
+
+
+            // Logging the total example cost:
+            let cost_arr = Matrix.arrayFrom(cost);
+
+            console.log(`${Matrix.arrayFrom(activations[0])} => ${Matrix.arrayFrom(activations[activations.length-1])}\t|\t${Matrix.arrayFrom(label)}\t|\tC0:\t${cost_arr}`);
+            // console.log(`Total cost:\t${cost_arr.reduce((prev, cur, ind)=>prev+cur)/cost_arr.length}`);
+
+
+            // Calculating dC/dw and dC/db for all of the layers:
+            let out_dCda = output.madd(label.map((x)=>-x)).map((x)=> 2*x);
+
+            let dCdws = [];
+            let dCdbs = [];
+
+            let current_dCda = out_dCda;
+            for (let l = this.layers.length-1; l > 0; l--) {
+                // Find previous layer
+                // l - layer number from ouput to input (0)
+
+                let current_dCdw = z[l].map(this.activ_f_prime).expmmul(activations[l-1].transp()).byv(current_dCda);
+                let current_dCdb = z[l].map(this.activ_f_prime).byv(current_dCda);
+                dCdws.push(current_dCdw);
+                dCdbs.push(current_dCdb);
+                
+                
+                let prev_da1da0 = this.weights[l-1].byv(z[l].map(this.activ_f_prime)).transp();
+                let prev_dCda = prev_da1da0.mmul(current_dCda);
+                current_dCda = prev_dCda;
+            }
+
+            // Adjusting the weights according to dC/dw's and biases according to dC/db's
+            for (let l = 0; l < this.layers.length-1; l++) {
+                this.weights[l] = this.weights[l].madd(dCdws[this.layers.length-2-l].map((x)=>-x*lr));
+                this.biases[l] = this.biases[l].madd(dCdbs[this.layers.length-2-l].map((x)=>-x*lr));
+            }
+        }
+    }
+
+    learn(data, lr, iterations) {
+        for (let i = 0; i < iterations; i++) {
+            console.log(`Iteration ${i}`)
+            this.training(data, lr);
+        }
+    }
+
+    getWeights() {
+        let weights = [];
+        for (let l = 0; l < this.layers.length-1; l++) {
+            weights.push(this.weights[l].arr);
+        }
+        return weights;
+    }
+
+    getBiases() {
+        let biases = [];
+        for (let l = 0; l < this.layers.length-1; l++) {
+            biases.push(this.biases[l].arr);
+        }
+        return biases;
+    }
 }

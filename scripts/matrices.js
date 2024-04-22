@@ -1,4 +1,4 @@
-function equal_length_text(text, n) {
+function form(text, n) {
     if (typeof(text) != "string") text = String(text);
     let l = text.length;
     if (text.length == n) {
@@ -43,10 +43,11 @@ class Matrix {
         for (let i = 0; i < this.rows; i++) {
             let outstr = "";
             for (let j = 0; j < this.cols; j++) {
-                outstr += equal_length_text(this.arr[i][j], 4) + " ";
+                outstr += form(this.arr[i][j], 4) + " ";
             }
             console.log(outstr);
         }
+        console.log("");
     }
 
     minit(init_arr) {
@@ -71,89 +72,44 @@ class Matrix {
             }
     }
 
-    getDim() {
-        return [this.arr.length, this.arr[0].length];
-    }
-    getRows() {
-        return this.arr.length;
-    }
-    getCols() {
-        return this.arr[0].length;
-    }
+    madd(matrix2) {
 
-    static madd(matrix1, matrix2) {
-        let m1_rows = matrix1.getRows();
-        let m1_cols = matrix1.getCols();
-        let m2_rows = matrix2.getRows();
-        let m2_cols = matrix2.getCols();
-
-        if (m1_rows != m2_rows || m1_cols != m2_cols) {
-            alert("Can't add matrices of different size!");
+        if (this.rows != matrix2.rows || this.cols != matrix2.cols) {
+            console.log("Can't add matrices of different size!");
+            console.log(this, matrix2);
             return null;
         }
 
-        let result = new Matrix([m1_rows, m1_cols, 0]);
+        let result = new Matrix([this.rows, this.cols, 0]);
 
-        for (let i = 0; i < m1_rows; i++) {
-            for (let j = 0; j < m1_cols; j++) {
-                result.arr[i][j] = matrix1.arr[i][j] + matrix2.arr[i][j];
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                result.arr[i][j] = this.arr[i][j] + matrix2.arr[i][j];
             }
         }
 
         return result;
     }
-    nadd(num) {
-        for (let i = 0; i < this.rows; i++) {
-            for (let j = 0; j < this.cols; j++) {
-                this.arr[i][j] += num;
-            }
-        }
-    }
-    static rnadd(m, num) {
-        let res = new Matrix([m.rows, m.cols, 0]);
-        for (let i = 0; i < m.rows; i++) {
-            for (let j = 0; j < m.cols; j++) {
-                res.arr[i][j] = m.arr[i][j] + num;
-            }
-        }
-        return res;
-    }
 
-    static mmul(m1, m2) {
-        if (m1.cols != m2.rows) {
-            alert("Can't multiply these matrices.");
+    mmul(m2) {
+        if (this.cols != m2.rows) {
+            console.log("Can't multiply these matrices.");
             return;
         }
 
-        let result = new Matrix([m1.rows, m2.cols, 0]);
+        let result = new Matrix([this.rows, m2.cols, 0]);
 
         for (let i = 0; i < result.rows; i++) {
             for (let j = 0; j < result.cols; j++) {
                 let term = 0;
-                for (let k = 0; k < m1.cols; k++) {
-                    term += m1.arr[i][k] * m2.arr[k][j];
+                for (let k = 0; k < this.cols; k++) {
+                    term += this.arr[i][k] * m2.arr[k][j];
                 }
                 result.arr[i][j] = term;
             }
         }
 
         return result;
-    }
-    nmul(k) {
-        for (let i = 0; i < this.rows; i++) {
-            for (let j = 0; j < this.cols; j++) {
-                this.arr[i][j] *= k;
-            }
-        }
-    }
-    static rnmul(m, k) {
-        let res = new Matrix([m.rows, m.cols, 0]);
-        for (let i = 0; i < m.rows; i++) {
-            for (let j = 0; j < m.cols; j++) {
-                res.arr[i][j] = m.arr[i][j]*k;
-            }
-        }
-        return res;
     }
 
     transp() {
@@ -167,11 +123,13 @@ class Matrix {
     }
 
     map(func) {
+        let res = new Matrix([this.rows, this.cols, 0]);
         for (let i = 0; i < this.rows; i++) {
             for (let j = 0; j < this.cols; j++) {
-                this.arr[i][j] = func(this.arr[i][j]);
+                res.arr[i][j] = func(this.arr[i][j]);
             }
         }
+        return res;
     }
 
     static vectorFrom(arr) {
@@ -182,14 +140,66 @@ class Matrix {
         return vec;
     }
 
-    // TODO
-    // static equationMult(m1, m2, operation) {
-    //     let out = [];
+    expmmul(m) {
+        if (this.cols != 1 || m.rows != 1) return;
+        let res = new Matrix([this.rows, m.cols, 0]);
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < m.cols; j++) {
+                res.arr[i][j] = this.arr[i][0] * m.arr[0][j];
+            }
+        }
+        return res;
+    }
 
-    //     for (let i = 0; i < m1.rows; i++) {
-    //         for (let j = 0; j < m1.cols; j++) {
-    //             out.push(equal_length_text(m1[j][i]));
-    //         }
-    //     }
-    // }
+    byv(vector) {
+        let res = new Matrix([this.rows, this.cols, 0]);
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.cols; j++) {
+                res.arr[i][j] = this.arr[i][j]*vector.arr[i][0];
+            }
+        }
+        return res;
+    }
+    static arrayFrom(vec) {
+        let res = vec.transp().arr[0];
+        // res = res.map((x)=>Number(x));
+        return res;
+    }
+
+    static printCalc(arr) {
+        let out = [];
+        let center = Math.ceil(arr[0].rows/2)-1;
+        for (let i = 0; i < arr[0].rows; i++) {
+            out.push([]);
+        }
+        for (let i = 0; i < 5; i++) {
+            if (i % 2 == 0) {
+                for (let j = 0; j < arr[0].rows; j++) {
+                    out[i][j] = arr[i][j];
+                }
+            } else {
+                for (let j = 0; j < arr[0].rows; j++) {
+                    if (j == center) out [i][j] = arr[i]; continue;
+                    out[i][j] = ' ';
+                }
+            }
+        }
+        for (let i = 0; i < out[0].length; i++) {
+            console.log(out[i].join(''));
+        }
+    }
+
+    static printExpression(arr) {
+        if (typeof(arr) != "object") return;
+        for (let m = 0; m < arr.length; m++) {
+
+        }
+
+        for (let row = 0; row < max_row; row++) {
+
+        }
+        for (let i = 0; i < arr.length; i++) {
+            
+        }
+    }
 }
