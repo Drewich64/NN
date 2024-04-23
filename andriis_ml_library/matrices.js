@@ -1,22 +1,3 @@
-function form(text, n) {
-    if (typeof(text) != "string") text = String(text);
-    let l = text.length;
-    if (text.length == n) {
-        return text;
-    }
-    if (text.length < n) {
-        let res = text.split("");
-        for (let i = 0; i < n-text.length; i++) {
-            res.push(" ");
-        }
-        return res.join('');
-    }
-    if (text.length > n) {
-        let res = text.split("");
-        return res.splice(0, n).join('');
-    }
-}
-
 class Matrix {
     constructor(args) {
         switch(args.length) {
@@ -39,11 +20,30 @@ class Matrix {
         }
     }
 
+    form(text, n) {
+        if (typeof(text) != "string") text = String(text);
+        let l = text.length;
+        if (text.length == n) {
+            return text;
+        }
+        if (text.length < n) {
+            let res = text.split("");
+            for (let i = 0; i < n-text.length; i++) {
+                res.push(" ");
+            }
+            return res.join('');
+        }
+        if (text.length > n) {
+            let res = text.split("");
+            return res.splice(0, n).join('');
+        }
+    }
+
     print() {
         for (let i = 0; i < this.rows; i++) {
             let outstr = "";
             for (let j = 0; j < this.cols; j++) {
-                outstr += form(this.arr[i][j], 4) + " ";
+                outstr += this.this.form(this.arr[i][j], 4) + " ";
             }
             console.log(outstr);
         }
@@ -75,7 +75,7 @@ class Matrix {
     madd(matrix2) {
 
         if (this.rows != matrix2.rows || this.cols != matrix2.cols) {
-            console.log("Can't add matrices of different size!");
+            console.log("Can't add matrices of different size:");
             console.log(this, matrix2);
             return null;
         }
